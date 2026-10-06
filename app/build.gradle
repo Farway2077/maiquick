@@ -1,0 +1,47 @@
+plugins { id 'com.android.application' }
+def selectedAbi = project.findProperty('runtimeAbi') ?: 'all'
+def signingFile = rootProject.file('signing.properties')
+def signingValues = new Properties()
+if (signingFile.exists()) signingFile.withInputStream { signingValues.load(it) }
+def runtimeAssets = tasks.register('prepareRuntimeAssets', Copy) {
+    from('src/main/assets') {
+        if (selectedAbi == 'arm64-v8a') exclude 'runtime-x86_64.zip'
+        if (selectedAbi == 'x86_64') exclude 'runtime-arm64-v8a.zip'
+    }
+    into(layout.buildDirectory.dir("runtimeAssets/${selectedAbi}"))
+}
+android {
+    namespace 'fun.maiquick'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'fun.maiquick'
+        minSdk 26
+        // PRoot executes a private Linux userland, as Termux does. Android
+        // permits that execution model for apps targeting API 28.
+        targetSdk 28
+        versionCode 1
+        versionName '0.1.0'
+        testInstrumentationRunner 'fun.maiquick.RuntimeChecks'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    if (selectedAbi != 'all') {
+        defaultConfig.ndk.abiFilters.add(selectedAbi)
+    }
+    sourceSets.main.assets.setSrcDirs([layout.buildDirectory.dir("runtimeAssets/${selectedAbi}").get().asFile])
+    signingConfigs {
+        if (signingFile.exists()) {
+            personal {
+                storeFile rootProject.file(signingValues['storeFile'])
+                storePassword signingValues['storePassword']
+                keyAlias signingValues['keyAlias']
+                keyPassword signingValues['keyPassword']
+            }
+        }
+    }
+    buildTypes { release { minifyEnabled false; if (signingFile.exists()) signingConfig signingConfigs.personal } }
+    packagingOptions { jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/libproot*.so'] } }
+    // This app is sideloaded. API 28 is intentional for the phone-local
+    // userland execution model; the Play publishing rule remains a warning.
+    lint { warning 'ExpiredTargetSdkVersion' }
+}
+tasks.named('preBuild').configure { dependsOn runtimeAssets }

@@ -1,0 +1,2 @@
+2 Android checks passed: local Python/FFI/public API and encrypted persistence.
+

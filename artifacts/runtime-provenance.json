@@ -1,0 +1,12 @@
+[
+  {
+    "abi": "arm64-v8a",
+    "image_manifest": "sha256:739ba32ae445e8d58f3d90feb85f83bebc8346f8dd280fa1eb5848f4ff1ed163",
+    "sha256": "31755dd19979b7ae6729fe9c13f4e5a2296fd81ff3d13d93cfc71f09644c4ddb"
+  },
+  {
+    "abi": "x86_64",
+    "sha256": "57bdc4769b29c5485aa175b0c1e4427d5f91fe04300eff962d6a7b7ae200feda",
+    "source": "official Docker Python 3.12 slim-bookworm, fetched for emulator check"
+  }
+]
